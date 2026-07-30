@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum BookingStatus {
+  BOOKED
+  CANCELLED
+}
+
+model User {
+  id String @id @default(uuid())
+
+  name     String
+  email    String @unique
+  password String
+
+  role Role @default(CUSTOMER)
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Station {
+  id String @id @default(uuid())
+
+  code String @unique
+  name String
+
+  fromTrains Train[] @relation("FromStation")
+  toTrains   Train[] @relation("ToStation")
+}
+
+model Train {
+  id String @id @default(uuid())
+
+  trainNumber String @unique
+  trainName   String
+
+  fromId String
+  toId   String
+
+  totalSeats Int
+
+  from Station @relation("FromStation", fields: [fromId], references: [id])
+  to   Station @relation("ToStation", fields: [toId], references: [id])
+
+  schedules Schedule[]
+}
+
+model Schedule {
+  id String @id @default(uuid())
+
+  trainId String
+
+  journeyDate DateTime
+
+  availableSeats Int
+
+  train Train @relation(fields: [trainId], references: [id])
+
+  bookings Booking[]
+}
+
+model Booking {
+  id String @id @default(uuid())
+
+  userId     String
+  scheduleId String
+
+  seatCount Int
+
+  status BookingStatus @default(BOOKED)
+
+  bookedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+}
